@@ -1,13 +1,13 @@
-name: Super-Linter
+name: CI/CD Pipeline with Linting and Security Scans
 
 on: push
 
 jobs:
-  super-lint:
-    name: Lint code base
+  lint:
+    name: Lint Code Base
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v2
 
       - name: Run Super-Linter
@@ -15,3 +15,46 @@ jobs:
         env:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-check:
+    name: Dependency Security Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up Java
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+
+      - name: Run OWASP Dependency-Check
+        uses: jeremylong/dependency-check-action@v4.0.0
+        with:
+          format: 'ALL'
+          output_directory: 'dependency-check-report'
+          scan_path: '.'
+
+      - name: Upload Dependency-Check Report
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: dependency-check-report
+          path: dependency-check-report
+
+  security-scan:
+    name: Security Scan with Trivy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get install -y wget
+          wget -qO- https://github.com/aquasecurity/trivy/releases/download/v0.34.0/trivy_0.34.0_Linux-64bit.deb -O trivy.deb
+          sudo dpkg -i trivy.deb
+
+      - name: Run Trivy Scan
+        run: |
+          trivy fs . --exit-code 1 --severity HIGH,CRITICAL
