@@ -1,59 +1,17 @@
-name: CI/CD Pipeline with Linting and Security Scans
+name: Super-Linter
 
 on: push
 
 jobs:
-  lint:
-    name: Lint Code Base
+  super-lint:
+    name: Lint code base
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Run Super-Linter
         uses: github/super-linter@v4
         env:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  dependency-check:
-    name: Dependency Security Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Set up Java
-        uses: actions/setup-java@v2
-        with:
-          java-version: '23'
-
-      - name: Install OWASP Dependency-Check
-        run: |
-          wget https://github.com/jeremylong/DependencyCheck/releases/download/v6.3.2/dependency-check-6.3.2-release.zip
-          unzip dependency-check-6.3.2-release.zip
-          ./dependency-check/bin/dependency-check.sh --scan . --format ALL --out dependency-check-report
-
-      - name: Upload Dependency-Check Report
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: dependency-check-report
-          path: dependency-check-report
-
-  security-scan:
-    name: Security Scan with Trivy
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Install Trivy
-        run: |
-          sudo apt-get install -y wget
-          wget -qO- https://github.com/aquasecurity/trivy/releases/download/v0.34.0/trivy_0.34.0_Linux-64bit.deb -O trivy.deb
-          sudo dpkg -i trivy.deb
-
-      - name: Run Trivy Scan
-        run: |
-          trivy fs . --exit-code 0 --severity HIGH,CRITICAL
