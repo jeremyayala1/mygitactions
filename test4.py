@@ -4,3 +4,4 @@ def calculate_sum(a, b):
 
 
 result = calculate_sum(3, 4)
+print(result)  # Now 'result' is used
